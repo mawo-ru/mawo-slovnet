@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mawo-slovnet"
+version = "1.0.1"
+description = "Нейросетевые модели для русского языка: NER, морфология и синтаксис с автоматической загрузкой"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "MAWO Team", email = "team@mawo.ru"},
+]
+maintainers = [
+    {name = "MAWO Team", email = "team@mawo.ru"},
+]
+keywords = [
+    "nlp",
+    "russian",
+    "ner",
+    "morphology",
+    "syntax",
+    "slovnet",
+    "mawo",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: Russian",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+all = [
+    "mawo-slovnet[dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/mawo-ru/mawo-slovnet"
+Documentation = "https://github.com/mawo-ru/mawo-slovnet#readme"
+Repository = "https://github.com/mawo-ru/mawo-slovnet"
+Issues = "https://github.com/mawo-ru/mawo-slovnet/issues"
+Changelog = "https://github.com/mawo-ru/mawo-slovnet/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+packages = ["mawo_slovnet"]
+
+[tool.setuptools.package-data]
+mawo_slovnet = [
+    "py.typed",
+    "*.tar.neural.gz",  # Все нейронные модели
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I", "N", "W", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
