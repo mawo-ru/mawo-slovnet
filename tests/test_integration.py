@@ -58,7 +58,7 @@ class TestNERInitialization:
 
         ner = NER()
         # Проверяем, что модель загружена
-        assert hasattr(ner, 'model') or hasattr(ner, '_model')
+        assert hasattr(ner, "model") or hasattr(ner, "_model")
 
 
 class TestMorphInitialization:
@@ -118,7 +118,7 @@ class TestNERFunctionality:
         assert len(result) > 0, "Expected to find at least one entity"
 
         # Проверяем, что есть сущность типа PER
-        has_person = any(span.type == 'PER' for span in result if hasattr(span, 'type'))
+        has_person = any(span.type == "PER" for span in result if hasattr(span, "type"))
         assert has_person, "Expected to find PER entity for 'Александр Пушкин'"
 
     def test_ner_finds_location(self):
@@ -130,7 +130,7 @@ class TestNERFunctionality:
         result = ner(text)
 
         assert len(result) > 0
-        has_location = any(span.type == 'LOC' for span in result if hasattr(span, 'type'))
+        has_location = any(span.type == "LOC" for span in result if hasattr(span, "type"))
         assert has_location, "Expected to find LOC entity for 'Санкт-Петербурге'"
 
     def test_ner_empty_text(self):
@@ -181,7 +181,7 @@ class TestMorphFunctionality:
         assert len(result) > 0
         # Проверяем, что есть разметка
         first_token = result[0]
-        assert hasattr(first_token, 'pos') or hasattr(first_token, 'tag')
+        assert hasattr(first_token, "pos") or hasattr(first_token, "tag")
 
     def test_morph_empty_text(self):
         """Тест: Morph обрабатывает пустой текст"""
@@ -221,7 +221,7 @@ class TestSyntaxFunctionality:
         assert len(result) > 0
         # Проверяем, что есть синтаксические связи
         first_token = result[0]
-        assert hasattr(first_token, 'head') or hasattr(first_token, 'rel')
+        assert hasattr(first_token, "head") or hasattr(first_token, "rel")
 
 
 class TestDataFiles:
@@ -236,7 +236,7 @@ class TestDataFiles:
         module_path = Path(mawo_slovnet.__file__).parent
 
         # Проверяем наличие модели NER
-        ner_model = module_path / 'slovnet_ner_news_v1.tar.neural.gz'
+        ner_model = module_path / "slovnet_ner_news_v1.tar.neural.gz"
         assert ner_model.exists(), f"NER model not found at {ner_model}"
         assert ner_model.stat().st_size > 1_000_000, "NER model file is too small"
 
@@ -246,7 +246,7 @@ class TestDataFiles:
         import mawo_slovnet
 
         module_path = Path(mawo_slovnet.__file__).parent
-        morph_model = module_path / 'slovnet_morph_news_v1.tar.neural.gz'
+        morph_model = module_path / "slovnet_morph_news_v1.tar.neural.gz"
 
         assert morph_model.exists(), f"Morph model not found at {morph_model}"
         assert morph_model.stat().st_size > 1_000_000, "Morph model file is too small"
@@ -257,7 +257,7 @@ class TestDataFiles:
         import mawo_slovnet
 
         module_path = Path(mawo_slovnet.__file__).parent
-        syntax_model = module_path / 'slovnet_syntax_news_v1.tar.neural.gz'
+        syntax_model = module_path / "slovnet_syntax_news_v1.tar.neural.gz"
 
         assert syntax_model.exists(), f"Syntax model not found at {syntax_model}"
         assert syntax_model.stat().st_size > 1_000_000, "Syntax model file is too small"
@@ -343,5 +343,5 @@ class TestMultipleInstances:
         assert syntax_result is not None
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '--tb=short'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "--tb=short"])

@@ -7,6 +7,7 @@ Features:
 - Hybrid mode: DL models + rule-based fallback
 - 100% качество оригинального SlovNet (если модели доступны)
 """
+
 from __future__ import annotations
 
 import logging
@@ -105,7 +106,9 @@ class EnhancedSlovNetLoader:
             self.slovnet_available = True
             logger.info("✅ Original slovnet package available")
         except ImportError:
-            logger.info("ℹ️  Original slovnet package not installed (will try to use numpy-only mode)")
+            logger.info(
+                "ℹ️  Original slovnet package not installed (will try to use numpy-only mode)"
+            )
 
     def ensure_models_downloaded(self) -> bool:
         """Проверяет и загружает модели если нужно.
@@ -124,9 +127,7 @@ class EnhancedSlovNetLoader:
         cache_info = downloader.get_cache_info()
 
         # Check if any models are cached
-        cached_models = [
-            name for name, info in cache_info["models"].items() if info["cached"]
-        ]
+        cached_models = [name for name, info in cache_info["models"].items() if info["cached"]]
 
         if cached_models:
             logger.info(f"✅ Found cached models: {', '.join(cached_models)}")
@@ -359,11 +360,19 @@ def get_model_info() -> dict[str, Any]:
 __version__ = "2.0.0-mawo-enhanced"
 __author__ = "MAWO Team (based on SlovNet by Alexander Kukushkin)"
 
+# Алиасы для удобства использования
+NER = NewsNERTagger
+Morph = NewsMorphTagger
+Syntax = NewsSyntaxParser
+
 __all__ = [
     "NewsEmbedding",
     "NewsMorphTagger",
     "NewsNERTagger",
     "NewsSyntaxParser",
+    "NER",
+    "Morph",
+    "Syntax",
     "create_morphology_tagger",
     "download_models",
     "get_model_info",
