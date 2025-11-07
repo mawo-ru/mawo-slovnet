@@ -5,6 +5,7 @@ Based on:
 - SlovNet v0.6.0 (github.com/natasha/slovnet)
 - MAWO offline-first architecture
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -289,9 +290,7 @@ class SlovNetModelDownloader:
             size_mb = 0
             if cached:
                 # Calculate directory size
-                size_bytes = sum(
-                    f.stat().st_size for f in model_dir.rglob("*") if f.is_file()
-                )
+                size_bytes = sum(f.stat().st_size for f in model_dir.rglob("*") if f.is_file())
                 size_mb = size_bytes / (1024 * 1024)
                 info["total_size_mb"] += size_mb
 
