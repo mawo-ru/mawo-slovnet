@@ -306,19 +306,31 @@ pip install -e ".[dev]"
 pytest tests/
 ```
 
-## Благодарности
+## Благодарности и Upstream-проект
 
-Основано на **SlovNet** от Alexander Kukushkin (github.com/natasha/slovnet).
+**mawo-slovnet** является форком оригинального проекта **[SlovNet](https://github.com/natasha/slovnet)**, разработанного **Александром Кукушкиным** ([@kuk](https://github.com/kuk)).
 
-**Улучшения MAWO:**
-- Автоматическая загрузка моделей
-- Offline-first архитектура
-- Гибридный режим (ML + rules)
-- Оптимизация памяти
+### Оригинальный проект
+
+- **Репозиторий**: https://github.com/natasha/slovnet
+- **Автор**: Alexander Kukushkin
+- **Лицензия**: MIT
+- **Copyright**: (c) 2017 Alexander Kukushkin
+
+### Улучшения MAWO
+
+- **Автоматическая загрузка моделей**: Модели скачиваются при первом использовании
+- **Offline-first архитектура**: Полностью автономная работа после загрузки
+- **Гибридный режим**: ML + правила для надежной работы
+- **Оптимизация памяти**: Эффективное использование ресурсов
+
+**Полная информация об авторстве**: см. [ATTRIBUTION.md](ATTRIBUTION.md)
 
 ## Лицензия
 
-Лицензия MIT - см. файл [LICENSE](LICENSE).
+MIT License - см. [LICENSE](LICENSE) файл.
+
+Этот проект полностью соответствует MIT лицензии оригинального проекта slovnet и сохраняет все оригинальные copyright notices.
 
 ## Ссылки
 
