@@ -23,24 +23,30 @@ logger = logging.getLogger(__name__)
 class SlovNetModelDownloader:
     """Загрузка и кэширование моделей SlovNet."""
 
-    # Official SlovNet models from Yandex Cloud Storage
+    # MAWO SlovNet models from mawo-nlp-data repository
     MODELS = {
+        "navec": {
+            "url": "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/navec_news_v1_1B_250K_300d_100q.tar.neural.gz",
+            "size_mb": 25,
+            "sha256": "88226479caa573c421afdc761fdf9547802ed0c88327c29f21af21db95b81811",
+            "description": "Navec embeddings для словаря 250K слов",
+        },
         "ner": {
-            "url": "https://storage.yandexcloud.net/natasha-slovnet/08_slovnet_ner_news_v1.tar",
-            "size_mb": 30,
-            "sha256": "b5f7f8f0c8c6c5c4c3c2c1c0",  # Placeholder
+            "url": "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/slovnet_ner_news_v1.tar.neural.gz",
+            "size_mb": 2.2,
+            "sha256": "b4880fd6d5536097485c985d7b8a11bd593ea83e286554abb3d5a1df1b2b1f0a",
             "description": "Named Entity Recognition для русских новостей",
         },
         "morph": {
-            "url": "https://storage.yandexcloud.net/natasha-slovnet/08_slovnet_morph_news_v1.tar",
-            "size_mb": 27,
-            "sha256": "c6f8f9f1c9c7c6c5c4c3c2c1",  # Placeholder
+            "url": "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/slovnet_morph_news_v1.tar.neural.gz",
+            "size_mb": 2.4,
+            "sha256": "276c8a3e6534a142e28b3b804cf269f4a8cb85c0c1342c059d17e1e84bb9ed18",
             "description": "Морфологический анализ для русских новостей",
         },
         "syntax": {
-            "url": "https://storage.yandexcloud.net/natasha-slovnet/08_slovnet_syntax_news_v1.tar",
-            "size_mb": 28,
-            "sha256": "d7f9faf2cac8c7c6c5c4c3c2",  # Placeholder
+            "url": "https://github.com/mawo-ru/mawo-nlp-data/releases/download/v1.0.0/slovnet_syntax_news_v1.tar.neural.gz",
+            "size_mb": 2.5,
+            "sha256": "fd214b5424dca70d4a6634abb7a5ab27c1689bb0d49638c19647db18c0375d99",
             "description": "Синтаксический парсинг для русских новостей",
         },
     }
@@ -124,34 +130,44 @@ class SlovNetModelDownloader:
             temp_dir = self.cache_dir / f"{model_name}.tmp"
             temp_dir.mkdir(parents=True, exist_ok=True)
 
-            tar_path = temp_dir / f"{model_name}.tar"
+            # Определяем формат файла из URL
+            url = model_info["url"]
+            if url.endswith(".tar.neural.gz"):
+                archive_path = temp_dir / f"{model_name}.tar.neural.gz"
+            else:
+                archive_path = temp_dir / f"{model_name}.tar"
 
             # Download with progress
             self._download_file(
-                model_info["url"], tar_path, model_info["size_mb"], progress_callback
+                url, archive_path, model_info["size_mb"], progress_callback
             )
 
-            # Extract tar archive
-            logger.info(f"📦 Extracting model archive...")
-            with tarfile.open(tar_path, "r") as tar:
-                tar.extractall(temp_dir)
+            # Распаковываем .gz в .tar (если это .tar.neural.gz)
+            if url.endswith(".tar.neural.gz") or url.endswith(".tar.gz"):
+                logger.info(f"📦 Распаковка gzip...")
+                import gzip
 
-            # Move to final location
+                # Создаем .tar файл без .gz
+                tar_path = temp_dir / f"{model_name}.tar"
+                with gzip.open(archive_path, 'rb') as f_in:
+                    with open(tar_path, 'wb') as f_out:
+                        f_out.write(f_in.read())
+
+                # Удаляем .gz файл
+                archive_path.unlink()
+                final_file = tar_path
+            else:
+                final_file = archive_path
+
+            # Переносим tar файл в финальную директорию
             if model_dir.exists():
                 shutil.rmtree(model_dir)
 
-            # Find extracted directory (usually the same name as model)
-            extracted_dirs = [
-                d for d in temp_dir.iterdir() if d.is_dir() and d.name != "__pycache__"
-            ]
-            if extracted_dirs:
-                shutil.move(str(extracted_dirs[0]), str(model_dir))
-            else:
-                # If extracted files are in temp_dir directly
-                model_dir.mkdir(parents=True, exist_ok=True)
-                for item in temp_dir.iterdir():
-                    if item.name != f"{model_name}.tar":
-                        shutil.move(str(item), str(model_dir / item.name))
+            model_dir.mkdir(parents=True, exist_ok=True)
+
+            # Переносим tar файл
+            final_path = model_dir / f"{model_name}.tar"
+            shutil.move(str(final_file), str(final_path))
 
             # Mark as complete
             (model_dir / ".download_complete").touch()

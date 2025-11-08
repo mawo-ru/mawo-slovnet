@@ -28,6 +28,63 @@ except ImportError:
     logger.warning("⚠️ Model downloader not available")
 
 
+# Mock classes for fallback mode (mimicking original slovnet structures)
+class Span:
+    """Mock Span class for fallback mode."""
+
+    def __init__(self, start: int, stop: int, type: str):
+        self.start = start
+        self.stop = stop
+        self.type = type
+
+    @property
+    def text(self):
+        """For compatibility."""
+        return ""
+
+    def __repr__(self):
+        return f"Span(start={self.start}, stop={self.stop}, type={self.type!r})"
+
+
+class SpanMarkup:
+    """Mock SpanMarkup class for NER fallback mode."""
+
+    def __init__(self, text: str, spans: list):
+        self.text = text
+        self.spans = spans
+
+    def __repr__(self):
+        return f"SpanMarkup(text={self.text!r}, spans={len(self.spans)})"
+
+
+class Token:
+    """Mock Token class for Morph/Syntax fallback mode."""
+
+    def __init__(self, text: str, **kwargs):
+        self.text = text
+        # Morph attributes
+        self.tag = kwargs.get("tag", "")
+        self.pos = kwargs.get("pos", "")
+        self.feats = kwargs.get("feats", "")
+        # Syntax attributes
+        self.id = kwargs.get("id", "")
+        self.head_id = kwargs.get("head_id", "")
+        self.rel = kwargs.get("rel", "")
+
+    def __repr__(self):
+        return f"Token(text={self.text!r})"
+
+
+class TokenMarkup:
+    """Mock TokenMarkup class for Morph/Syntax fallback mode."""
+
+    def __init__(self, tokens: list):
+        self.tokens = tokens
+
+    def __repr__(self):
+        return f"TokenMarkup(tokens={len(self.tokens)})"
+
+
 class LocalSlovNetImplementation:
     """Production-ready SlovNet fallback implementation.
 
@@ -58,32 +115,56 @@ class LocalSlovNetImplementation:
         # Embeddings - возвращаем нормализованный текст
         return processed_text
 
-    def _basic_ner_processing(self, text: str) -> str:
+    def _basic_ner_processing(self, text: str) -> SpanMarkup:
         """Базовое NER без ML моделей."""
-        # Simple rule-based NER
+        # Simple rule-based NER - returns empty spans list
+        # (real implementation would require complex patterns)
         import re
 
+        spans = []
         # Find capitalized words (potential entities)
-        entities = re.findall(r"\b[А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ][а-яё]+)*\b", text)
+        # Note: This is a very basic heuristic and not accurate
+        for match in re.finditer(r"\b[А-ЯЁ][а-яё]+(?:\s+[А-ЯЁ][а-яё]+)*\b", text):
+            # We can't reliably determine entity type without ML, so mark as PER
+            spans.append(Span(start=match.start(), stop=match.end(), type="PER"))
 
-        logger.debug(f"Rule-based NER found {len(entities)} potential entities")
-        return text
+        logger.debug(f"Rule-based NER found {len(spans)} potential entities")
+        return SpanMarkup(text=text, spans=spans)
 
-    def _basic_morph_processing(self, text: str) -> str:
+    def _basic_morph_processing(self, text: str | list) -> TokenMarkup:
         """Базовая морфологическая обработка."""
-        # Simple tokenization
-        tokens = text.split()
+        # Accept either string or list of words (like original Morph)
+        if isinstance(text, str):
+            words = text.split()
+        else:
+            words = text
+
+        tokens = []
+        for word in words:
+            # Basic heuristic: all words marked as NOUN (not accurate, but safe)
+            tokens.append(Token(text=word, tag="NOUN", pos="NOUN", feats=""))
+
         logger.debug(f"Rule-based morph processed {len(tokens)} tokens")
-        return text
+        return TokenMarkup(tokens=tokens)
 
-    def _basic_syntax_processing(self, text: str) -> str:
+    def _basic_syntax_processing(self, text: str | list) -> TokenMarkup:
         """Упрощенный синтаксический анализ."""
-        # Basic sentence splitting
-        import re
+        # Accept either string or list of words (like original Syntax)
+        if isinstance(text, str):
+            words = text.split()
+        else:
+            words = text
 
-        sentences = re.split(r"[.!?]+\s*", text)
-        logger.debug(f"Rule-based syntax found {len(sentences)} sentences")
-        return text
+        tokens = []
+        for i, word in enumerate(words):
+            # Basic heuristic: first word is root, others depend on it
+            if i == 0:
+                tokens.append(Token(text=word, id=str(i), head_id=str(i), rel="root"))
+            else:
+                tokens.append(Token(text=word, id=str(i), head_id="0", rel="dep"))
+
+        logger.debug(f"Rule-based syntax processed {len(tokens)} tokens")
+        return TokenMarkup(tokens=tokens)
 
 
 class EnhancedSlovNetLoader:
@@ -185,18 +266,16 @@ class EnhancedSlovNetLoader:
                 if str(model_dir) not in sys.path:
                     sys.path.insert(0, str(model_dir))
 
-            # Import slovnet components
+            # Import slovnet components (используем базовые классы NER, Morph, Syntax)
             import slovnet
-            from slovnet import NewsEmbedding as _NewsEmbedding
-            from slovnet import NewsMorphTagger as _NewsMorphTagger
-            from slovnet import NewsNERTagger as _NewsNERTagger
-            from slovnet import NewsSyntaxParser as _NewsSyntaxParser
+            from slovnet import NER as _NER
+            from slovnet import Morph as _Morph
+            from slovnet import Syntax as _Syntax
 
-            # Store in global scope
-            globals()["_NewsEmbedding"] = _NewsEmbedding
-            globals()["_NewsNERTagger"] = _NewsNERTagger
-            globals()["_NewsMorphTagger"] = _NewsMorphTagger
-            globals()["_NewsSyntaxParser"] = _NewsSyntaxParser
+            # Store in global scope (маппинг на наши имена с News префиксом)
+            globals()["_NewsNERTagger"] = _NER
+            globals()["_NewsMorphTagger"] = _Morph
+            globals()["_NewsSyntaxParser"] = _Syntax
 
             self.models_loaded = True
             logger.info("✅ SlovNet models loaded successfully")
@@ -215,25 +294,6 @@ _models_available = _loader.load_slovnet_with_models()
 
 
 # Factory functions with hybrid mode
-def NewsEmbedding(path: str | None = None, use_models: bool = True) -> Any:
-    """Create NewsEmbedding instance.
-
-    Args:
-        path: Path to model (if using local models)
-        use_models: Try to use ML models if available
-
-    Returns:
-        NewsEmbedding instance or fallback
-    """
-    if use_models and _models_available and "_NewsEmbedding" in globals():
-        try:
-            return globals()["_NewsEmbedding"](path)
-        except Exception as e:
-            logger.warning(f"Failed to create NewsEmbedding: {e}, using fallback")
-
-    return LocalSlovNetImplementation("embedding", path)
-
-
 def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:
     """Create NewsNERTagger instance.
 
@@ -248,12 +308,39 @@ def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:
         try:
             if MODEL_DOWNLOADER_AVAILABLE and path is None:
                 downloader = get_model_downloader()
-                if downloader.is_model_cached("ner"):
-                    path = str(downloader.get_model_path("ner"))
 
-            return globals()["_NewsNERTagger"](path)
+                # Загружаем navec если нужно
+                if not downloader.is_model_cached("navec"):
+                    logger.info("Загружаем navec embeddings...")
+                    downloader.download_model("navec")
+
+                # Загружаем NER если нужно
+                if not downloader.is_model_cached("ner"):
+                    logger.info("Загружаем NER модель...")
+                    downloader.download_model("ner")
+
+                # Получаем пути к файлам
+                navec_dir = downloader.get_model_path("navec")
+                ner_dir = downloader.get_model_path("ner")
+
+                navec_tar = navec_dir / "navec.tar"
+                ner_tar = ner_dir / "ner.tar"
+
+                if navec_tar.exists() and ner_tar.exists():
+                    # Загружаем navec
+                    from navec import Navec
+                    navec = Navec.load(str(navec_tar))
+
+                    # Загружаем и инициализируем NER с navec
+                    NER_class = globals()["_NewsNERTagger"]
+                    ner = NER_class.load(str(ner_tar))
+                    ner = ner.navec(navec)
+
+                    logger.info("✅ NER модель загружена с navec embeddings")
+                    return ner
+
         except Exception as e:
-            logger.warning(f"Failed to create NewsNERTagger: {e}, using fallback")
+            logger.warning(f"Не удалось загрузить NER модель: {e}, используем fallback")
 
     return LocalSlovNetImplementation("ner", path)
 
@@ -272,12 +359,39 @@ def NewsMorphTagger(path: str | None = None, use_models: bool = True) -> Any:
         try:
             if MODEL_DOWNLOADER_AVAILABLE and path is None:
                 downloader = get_model_downloader()
-                if downloader.is_model_cached("morph"):
-                    path = str(downloader.get_model_path("morph"))
 
-            return globals()["_NewsMorphTagger"](path)
+                # Загружаем navec если нужно
+                if not downloader.is_model_cached("navec"):
+                    logger.info("Загружаем navec embeddings...")
+                    downloader.download_model("navec")
+
+                # Загружаем Morph если нужно
+                if not downloader.is_model_cached("morph"):
+                    logger.info("Загружаем Morph модель...")
+                    downloader.download_model("morph")
+
+                # Получаем пути к файлам
+                navec_dir = downloader.get_model_path("navec")
+                morph_dir = downloader.get_model_path("morph")
+
+                navec_tar = navec_dir / "navec.tar"
+                morph_tar = morph_dir / "morph.tar"
+
+                if navec_tar.exists() and morph_tar.exists():
+                    # Загружаем navec
+                    from navec import Navec
+                    navec = Navec.load(str(navec_tar))
+
+                    # Загружаем и инициализируем Morph с navec
+                    Morph_class = globals()["_NewsMorphTagger"]
+                    morph = Morph_class.load(str(morph_tar))
+                    morph = morph.navec(navec)
+
+                    logger.info("✅ Morph модель загружена с navec embeddings")
+                    return morph
+
         except Exception as e:
-            logger.warning(f"Failed to create NewsMorphTagger: {e}, using fallback")
+            logger.warning(f"Не удалось загрузить Morph модель: {e}, используем fallback")
 
     return LocalSlovNetImplementation("morph", path)
 
@@ -296,12 +410,39 @@ def NewsSyntaxParser(path: str | None = None, use_models: bool = True) -> Any:
         try:
             if MODEL_DOWNLOADER_AVAILABLE and path is None:
                 downloader = get_model_downloader()
-                if downloader.is_model_cached("syntax"):
-                    path = str(downloader.get_model_path("syntax"))
 
-            return globals()["_NewsSyntaxParser"](path)
+                # Загружаем navec если нужно
+                if not downloader.is_model_cached("navec"):
+                    logger.info("Загружаем navec embeddings...")
+                    downloader.download_model("navec")
+
+                # Загружаем Syntax если нужно
+                if not downloader.is_model_cached("syntax"):
+                    logger.info("Загружаем Syntax модель...")
+                    downloader.download_model("syntax")
+
+                # Получаем пути к файлам
+                navec_dir = downloader.get_model_path("navec")
+                syntax_dir = downloader.get_model_path("syntax")
+
+                navec_tar = navec_dir / "navec.tar"
+                syntax_tar = syntax_dir / "syntax.tar"
+
+                if navec_tar.exists() and syntax_tar.exists():
+                    # Загружаем navec
+                    from navec import Navec
+                    navec = Navec.load(str(navec_tar))
+
+                    # Загружаем и инициализируем Syntax с navec
+                    Syntax_class = globals()["_NewsSyntaxParser"]
+                    syntax = Syntax_class.load(str(syntax_tar))
+                    syntax = syntax.navec(navec)
+
+                    logger.info("✅ Syntax модель загружена с navec embeddings")
+                    return syntax
+
         except Exception as e:
-            logger.warning(f"Failed to create NewsSyntaxParser: {e}, using fallback")
+            logger.warning(f"Не удалось загрузить Syntax модель: {e}, используем fallback")
 
     return LocalSlovNetImplementation("syntax", path)
 
