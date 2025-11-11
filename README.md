@@ -37,7 +37,8 @@ markup = ner(text)
 
 # Извлекаем именованные сущности
 for span in markup.spans:
-    print(f"{span.text} -> {span.type}")
+    entity_text = markup.text[span.start:span.stop]
+    print(f"{entity_text} -> {span.type}")
 # Владимир Путин -> PER
 # Москву -> LOC
 ```
@@ -50,9 +51,10 @@ from mawo_slovnet import NewsMorphTagger
 # Создаём морфологический теггер
 morph = NewsMorphTagger()
 
-# Анализируем текст
-text = "Мама мыла раму."
-markup = morph(text)
+# Анализируем текст (передаём список слов)
+text = "Мама мыла раму"
+words = text.split()
+markup = morph(words)
 
 # Получаем морфологические теги
 for token in markup.tokens:
@@ -70,9 +72,10 @@ from mawo_slovnet import NewsSyntaxParser
 # Создаём синтаксический парсер
 syntax = NewsSyntaxParser()
 
-# Разбираем предложение
-text = "Кот сидит на коврике."
-markup = syntax(text)
+# Разбираем предложение (передаём список слов)
+text = "Кот сидит на коврике"
+words = text.split()
+markup = syntax(words)
 
 # Получаем зависимости
 for token in markup.tokens:
@@ -216,7 +219,8 @@ texts = [
 for text in texts:
     markup = ner(text)
     for span in markup.spans:
-        print(f"{text}: {span.text} ({span.type})")
+        entity_text = markup.text[span.start:span.stop]
+        print(f"{text}: {entity_text} ({span.type})")
 ```
 
 ## Интеграция с другими библиотеками
@@ -235,7 +239,7 @@ morph_deep = create_analyzer()
 
 text = "стали"
 # Быстрый разбор
-slovnet_result = morph_slovnet(text)
+slovnet_result = morph_slovnet([text])
 
 # Детальный анализ
 for parse in morph_deep.parse(text):
