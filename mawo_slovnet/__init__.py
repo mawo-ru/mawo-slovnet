@@ -97,9 +97,17 @@ class LocalSlovNetImplementation:
         self.path = path
         logger.info(f"📝 Using rule-based {model_type} implementation (no ML models)")
 
-    def __call__(self, text: str) -> Any:
+    def __call__(self, text: str | list) -> Any:
         """Базовая обработка текста без внешних зависимостей."""
-        if not text or not isinstance(text, str):
+        if not text:
+            return text
+
+        # Для morph и syntax принимаем как строку, так и список слов
+        if self.model_type in ("morph", "syntax"):
+            return self._basic_morph_processing(text) if self.model_type == "morph" else self._basic_syntax_processing(text)
+
+        # Для NER требуется строка
+        if not isinstance(text, str):
             return text
 
         # Простая предобработка для русского текста
@@ -107,10 +115,6 @@ class LocalSlovNetImplementation:
 
         if self.model_type == "ner":
             return self._basic_ner_processing(processed_text)
-        if self.model_type == "morph":
-            return self._basic_morph_processing(processed_text)
-        if self.model_type == "syntax":
-            return self._basic_syntax_processing(processed_text)
 
         # Embeddings - возвращаем нормализованный текст
         return processed_text
