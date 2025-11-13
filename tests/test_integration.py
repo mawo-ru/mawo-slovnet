@@ -3,8 +3,9 @@
 Тестируют библиотеку как самодостаточный проект
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 class TestImports:
@@ -13,28 +14,28 @@ class TestImports:
     def test_main_module_import(self):
         """Тест: главный модуль импортируется"""
         try:
-            import mawo_slovnet
+            import mawo_slovnet  # noqa: F401
         except ImportError as e:
             pytest.fail(f"Failed to import mawo_slovnet: {e}")
 
     def test_ner_class_import(self):
         """Тест: класс NER импортируется"""
         try:
-            from mawo_slovnet import NER
+            from mawo_slovnet import NER  # noqa: F401
         except ImportError as e:
             pytest.fail(f"Failed to import NER: {e}")
 
     def test_morph_class_import(self):
         """Тест: класс Morph импортируется"""
         try:
-            from mawo_slovnet import Morph
+            from mawo_slovnet import Morph  # noqa: F401
         except ImportError as e:
             pytest.fail(f"Failed to import Morph: {e}")
 
     def test_syntax_class_import(self):
         """Тест: класс Syntax импортируется"""
         try:
-            from mawo_slovnet import Syntax
+            from mawo_slovnet import Syntax  # noqa: F401
         except ImportError as e:
             pytest.fail(f"Failed to import Syntax: {e}")
 
@@ -229,7 +230,6 @@ class TestDataFiles:
 
     def test_ner_model_file_exists(self):
         """Тест: файл модели NER существует"""
-        from pathlib import Path
         import mawo_slovnet
 
         # Находим директорию модуля
@@ -242,7 +242,6 @@ class TestDataFiles:
 
     def test_morph_model_file_exists(self):
         """Тест: файл модели Morph существует"""
-        from pathlib import Path
         import mawo_slovnet
 
         module_path = Path(mawo_slovnet.__file__).parent
@@ -253,7 +252,6 @@ class TestDataFiles:
 
     def test_syntax_model_file_exists(self):
         """Тест: файл модели Syntax существует"""
-        from pathlib import Path
         import mawo_slovnet
 
         module_path = Path(mawo_slovnet.__file__).parent
