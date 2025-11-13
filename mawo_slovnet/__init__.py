@@ -511,7 +511,6 @@ Morph = NewsMorphTagger
 Syntax = NewsSyntaxParser
 
 __all__ = [
-    "NewsEmbedding",
     "NewsMorphTagger",
     "NewsNERTagger",
     "NewsSyntaxParser",
