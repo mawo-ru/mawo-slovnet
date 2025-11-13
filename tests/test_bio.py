@@ -1,26 +1,17 @@
-
 import pytest
-
-from slovnet.token import tokenize
-from slovnet.const import (
-    B, I, O,
-    PER, LOC
-)
 from slovnet.bio import (
-    format_bio,
-
-    io_spans,
-    spans_io,
-
-    bio_spans,
-    spans_bio,
-
     bio_io,
-    select_type_tags
+    bio_spans,
+    format_bio,
+    io_spans,
+    select_type_tags,
+    spans_bio,
+    spans_io,
 )
+from slovnet.const import LOC, PER, B, I, O
+from slovnet.token import tokenize
 
-
-T1, T2, T3, T4, T5 = tokenize('1 2 3 4 5')
+T1, T2, T3, T4, T5 = tokenize("1 2 3 4 5")
 
 B_PER = format_bio(B, PER)
 I_PER = format_bio(I, PER)
@@ -36,26 +27,14 @@ TESTS = [
     [
         [],
         [],
-    ]
+    ],
 ]
 
 IO_TESTS = [
-    [
-        [T1, T2, T3],
-        [I_PER, O, O]
-    ],
-    [
-        [T1, T2, T3],
-        [I_PER, I_PER, O]
-    ],
-    [
-        [T1, T2, T3],
-        [I_PER, I_LOC, O]
-    ],
-    [
-        [T1, T2],
-        [I_PER, I_PER]
-    ],
+    [[T1, T2, T3], [I_PER, O, O]],
+    [[T1, T2, T3], [I_PER, I_PER, O]],
+    [[T1, T2, T3], [I_PER, I_LOC, O]],
+    [[T1, T2], [I_PER, I_PER]],
 ]
 
 BIO_TESTS = [
@@ -81,15 +60,10 @@ BIO_TESTS = [
     ],
 ]
 
-CONVERT_TESTS = [
-    [
-        [B_PER, I_PER],
-        [I]
-    ]
-]
+CONVERT_TESTS = [[[B_PER, I_PER], [I]]]
 
 
-@pytest.mark.parametrize('test', TESTS + IO_TESTS)
+@pytest.mark.parametrize("test", TESTS + IO_TESTS)
 def test_io(test):
     tokens, tags = test
     spans = io_spans(tokens, tags)
@@ -97,7 +71,7 @@ def test_io(test):
     assert tags == list(guess)
 
 
-@pytest.mark.parametrize('test', TESTS + BIO_TESTS)
+@pytest.mark.parametrize("test", TESTS + BIO_TESTS)
 def test_bio(test):
     tokens, tags = test
     spans = bio_spans(tokens, tags)

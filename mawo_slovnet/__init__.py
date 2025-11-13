@@ -13,8 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +25,16 @@ try:
 except ImportError:
     MODEL_DOWNLOADER_AVAILABLE = False
     logger.warning("⚠️ Model downloader not available")
+
+# Import numpy-based API (new implementation)
+try:
+    from .numpy_api import Morph as NumpyMorph
+
+    NUMPY_API_AVAILABLE = True
+except ImportError:
+    NUMPY_API_AVAILABLE = False
+    NumpyMorph = None
+    logger.warning("⚠️ Numpy-based API not available")
 
 
 # Mock classes for fallback mode (mimicking original slovnet structures)
@@ -104,7 +113,11 @@ class LocalSlovNetImplementation:
 
         # Для morph и syntax принимаем как строку, так и список слов
         if self.model_type in ("morph", "syntax"):
-            return self._basic_morph_processing(text) if self.model_type == "morph" else self._basic_syntax_processing(text)
+            return (
+                self._basic_morph_processing(text)
+                if self.model_type == "morph"
+                else self._basic_syntax_processing(text)
+            )
 
         # Для NER требуется строка
         if not isinstance(text, str):
@@ -271,7 +284,6 @@ class EnhancedSlovNetLoader:
                     sys.path.insert(0, str(model_dir))
 
             # Import slovnet components (используем базовые классы NER, Morph, Syntax)
-            import slovnet
             from slovnet import NER as _NER
             from slovnet import Morph as _Morph
             from slovnet import Syntax as _Syntax
@@ -298,7 +310,7 @@ _models_available = _loader.load_slovnet_with_models()
 
 
 # Factory functions with hybrid mode
-def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:
+def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:  # noqa: N802
     """Create NewsNERTagger instance.
 
     Args:
@@ -333,11 +345,12 @@ def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:
                 if navec_tar.exists() and ner_tar.exists():
                     # Загружаем navec
                     from navec import Navec
+
                     navec = Navec.load(str(navec_tar))
 
                     # Загружаем и инициализируем NER с navec
-                    NER_class = globals()["_NewsNERTagger"]
-                    ner = NER_class.load(str(ner_tar))
+                    ner_class = globals()["_NewsNERTagger"]
+                    ner = ner_class.load(str(ner_tar))
                     ner = ner.navec(navec)
 
                     logger.info("✅ NER модель загружена с navec embeddings")
@@ -349,7 +362,7 @@ def NewsNERTagger(path: str | None = None, use_models: bool = True) -> Any:
     return LocalSlovNetImplementation("ner", path)
 
 
-def NewsMorphTagger(path: str | None = None, use_models: bool = True) -> Any:
+def NewsMorphTagger(path: str | None = None, use_models: bool = True) -> Any:  # noqa: N802
     """Create NewsMorphTagger instance.
 
     Args:
@@ -384,11 +397,12 @@ def NewsMorphTagger(path: str | None = None, use_models: bool = True) -> Any:
                 if navec_tar.exists() and morph_tar.exists():
                     # Загружаем navec
                     from navec import Navec
+
                     navec = Navec.load(str(navec_tar))
 
                     # Загружаем и инициализируем Morph с navec
-                    Morph_class = globals()["_NewsMorphTagger"]
-                    morph = Morph_class.load(str(morph_tar))
+                    morph_class = globals()["_NewsMorphTagger"]
+                    morph = morph_class.load(str(morph_tar))
                     morph = morph.navec(navec)
 
                     logger.info("✅ Morph модель загружена с navec embeddings")
@@ -400,7 +414,7 @@ def NewsMorphTagger(path: str | None = None, use_models: bool = True) -> Any:
     return LocalSlovNetImplementation("morph", path)
 
 
-def NewsSyntaxParser(path: str | None = None, use_models: bool = True) -> Any:
+def NewsSyntaxParser(path: str | None = None, use_models: bool = True) -> Any:  # noqa: N802
     """Create NewsSyntaxParser instance.
 
     Args:
@@ -435,11 +449,12 @@ def NewsSyntaxParser(path: str | None = None, use_models: bool = True) -> Any:
                 if navec_tar.exists() and syntax_tar.exists():
                     # Загружаем navec
                     from navec import Navec
+
                     navec = Navec.load(str(navec_tar))
 
                     # Загружаем и инициализируем Syntax с navec
-                    Syntax_class = globals()["_NewsSyntaxParser"]
-                    syntax = Syntax_class.load(str(syntax_tar))
+                    syntax_class = globals()["_NewsSyntaxParser"]
+                    syntax = syntax_class.load(str(syntax_tar))
                     syntax = syntax.navec(navec)
 
                     logger.info("✅ Syntax модель загружена с navec embeddings")
@@ -507,7 +522,15 @@ __author__ = "MAWO Team (based on SlovNet by Alexander Kukushkin)"
 
 # Алиасы для удобства использования
 NER = NewsNERTagger
-Morph = NewsMorphTagger
+# Use numpy-based implementation as default Morph API
+# Keep NewsMorphTagger for backward compatibility
+if NUMPY_API_AVAILABLE and NumpyMorph is not None:
+    Morph = NumpyMorph
+else:
+    # Fallback to old implementation
+    Morph = NewsMorphTagger
+    logger.warning("⚠️ Using fallback NewsMorphTagger implementation")
+
 Syntax = NewsSyntaxParser
 
 __all__ = [

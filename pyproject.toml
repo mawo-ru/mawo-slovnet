@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mawo-slovnet"
-version = "1.0.6"
+version = "1.0.7"
 description = "Нейросетевые модели для русского языка: NER, морфология и синтаксис с автоматической загрузкой"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -78,6 +78,8 @@ target-version = ["py310", "py311", "py312"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "B", "UP"]
 ignore = ["E501"]
 

@@ -8,13 +8,10 @@ Based on:
 
 from __future__ import annotations
 
-import hashlib
 import logging
-import os
 import shutil
-import tarfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from urllib.request import urlopen
 
 logger = logging.getLogger(__name__)
@@ -138,19 +135,17 @@ class SlovNetModelDownloader:
                 archive_path = temp_dir / f"{model_name}.tar"
 
             # Download with progress
-            self._download_file(
-                url, archive_path, model_info["size_mb"], progress_callback
-            )
+            self._download_file(url, archive_path, model_info["size_mb"], progress_callback)
 
             # Распаковываем .gz в .tar (если это .tar.neural.gz)
             if url.endswith(".tar.neural.gz") or url.endswith(".tar.gz"):
-                logger.info(f"📦 Распаковка gzip...")
+                logger.info("📦 Распаковка gzip...")
                 import gzip
 
                 # Создаем .tar файл без .gz
                 tar_path = temp_dir / f"{model_name}.tar"
-                with gzip.open(archive_path, 'rb') as f_in:
-                    with open(tar_path, 'wb') as f_out:
+                with gzip.open(archive_path, "rb") as f_in:
+                    with open(tar_path, "wb") as f_out:
                         f_out.write(f_in.read())
 
                 # Удаляем .gz файл
